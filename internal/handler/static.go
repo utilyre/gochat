@@ -7,5 +7,6 @@ import (
 )
 
 func Static(r *mux.Router) {
-	r.Handle("/", http.FileServer(http.Dir("public")))
+	fs := http.FileServer(http.Dir("public"))
+	r.PathPrefix("/").Handler(fs)
 }

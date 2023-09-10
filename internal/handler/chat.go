@@ -27,7 +27,7 @@ func Chat(r *mux.Router, logger *slog.Logger, upgrader *websocket.Upgrader, hub 
 		hub:      hub,
 	}
 
-	r.HandleFunc("/chat", h.chat).Methods(http.MethodGet)
+	r.HandleFunc("/api/chat", h.chat).Methods(http.MethodGet)
 }
 
 func (h chatHandler) chat(w http.ResponseWriter, r *http.Request) {

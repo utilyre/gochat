@@ -22,8 +22,8 @@ func main() {
 			websocket.NewUpgrader,
 		),
 		fx.Invoke(
-			handler.Static,
 			handler.Chat,
+			handler.Static,
 		),
 	).Run()
 }

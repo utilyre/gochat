@@ -1,2 +1,2 @@
 dev:
-	gow -s -e go,mod,html run cmd/main.go
+	gow -s -e go,mod,html,css,js run cmd/main.go
