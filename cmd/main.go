@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/utilyre/gochat/internal/handler"
+	"github.com/utilyre/gochat/internal/hub"
 	"github.com/utilyre/gochat/internal/logger"
 	"github.com/utilyre/gochat/internal/router"
 	"github.com/utilyre/gochat/internal/template"
@@ -16,6 +17,7 @@ func main() {
 			logger.New,
 			template.New,
 			validator.New,
+			hub.New,
 			router.New,
 			websocket.NewUpgrader,
 		),

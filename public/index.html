@@ -21,11 +21,20 @@
     <div hx-ext="ws" ws-connect="/chat">
       <ol id="room" class="mt-6 flex flex-col gap-4"></ol>
 
-      <form ws-send class="mt-10 flex flex-col gap-2">
-        <input name="name" placeholder="Name" />
-        <input name="payload" placeholder="Message" />
+      <form ws-send class="mt-10 flex gap-2">
+        <input
+          required
+          name="payload"
+          placeholder="Message"
+          class="bg-slate-800 p-1"
+        />
 
-        <button type="submit">Send</button>
+        <button
+          type="submit"
+          class="p-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-900 transition-colors"
+        >
+          Send
+        </button>
       </form>
     </div>
   </body>

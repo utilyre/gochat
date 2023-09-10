@@ -1,35 +1,33 @@
 package handler
 
 import (
-	"bytes"
 	"encoding/json"
-	"html/template"
 	"log/slog"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/utilyre/gochat/internal/hub"
 )
 
 type Message struct {
-	Name    string `json:"name"`
 	Payload string `json:"payload"`
 }
 
 type chatHandler struct {
 	logger   *slog.Logger
-	tmpl     *template.Template
 	upgrader *websocket.Upgrader
+	hub      *hub.Hub
 }
 
-func Chat(r *mux.Router, logger *slog.Logger, tmpl *template.Template, upgrader *websocket.Upgrader) {
+func Chat(r *mux.Router, logger *slog.Logger, upgrader *websocket.Upgrader, hub *hub.Hub) {
 	h := chatHandler{
 		logger:   logger,
-		tmpl:     tmpl,
 		upgrader: upgrader,
+		hub:      hub,
 	}
 
-	r.HandleFunc("/chat", h.chat)
+	r.HandleFunc("/chat", h.chat).Methods(http.MethodGet)
 }
 
 func (h chatHandler) chat(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +36,12 @@ func (h chatHandler) chat(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer conn.Close()
+
+	e := h.hub.Join(&hub.Client{
+		UserID: 0,
+		Conn:   conn,
+	})
+	defer h.hub.Leave(e)
 
 	for {
 		mt, data, err := conn.ReadMessage()
@@ -51,25 +54,19 @@ func (h chatHandler) chat(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if mt != websocket.TextMessage {
-			conn.WriteMessage(websocket.TextMessage, []byte("Unsupported Message Type"))
+			_ = conn.WriteMessage(websocket.TextMessage, []byte("Unsupported Message Type"))
 			return
 		}
 
 		msg := new(Message)
 		if err := json.Unmarshal(data, msg); err != nil {
-			conn.WriteMessage(websocket.TextMessage, []byte("Invalid JSON Payload"))
+			_ = conn.WriteMessage(websocket.TextMessage, []byte("Invalid JSON Payload"))
 			return
 		}
 
-		buf := new(bytes.Buffer)
-		if err := h.tmpl.ExecuteTemplate(buf, "message", msg); err != nil {
-			h.logger.Warn("failed to execute template", "name", "message", "data", msg)
-			return
-		}
-
-		if err := conn.WriteMessage(websocket.TextMessage, buf.Bytes()); err != nil {
-			h.logger.Warn("failed to write message to connection", "err", err)
-			return
-		}
+		h.hub.Broadcast(hub.Message{
+			// TODO: Sender
+			Payload: msg.Payload,
+		})
 	}
 }
