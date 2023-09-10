@@ -37,11 +37,8 @@ func (h chatHandler) chat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e := h.hub.Join(&hub.Client{
-		UserID: 0,
-		Conn:   conn,
-	})
-	defer h.hub.Leave(e)
+	e := h.hub.Subscribe(conn)
+	defer h.hub.Unsubscribe(e)
 
 	for {
 		mt, data, err := conn.ReadMessage()

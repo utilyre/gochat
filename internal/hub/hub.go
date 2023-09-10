@@ -11,29 +11,24 @@ import (
 	"go.uber.org/fx"
 )
 
-type Client struct {
-	UserID int64
-	Conn   *websocket.Conn
-}
-
 type Message struct {
 	// TODO: Sender
 	Payload string
 }
 
 type Hub struct {
-	logger   *slog.Logger
-	tmpl     *template.Template
-	clients  *list.List
-	messages chan Message
+	logger      *slog.Logger
+	tmpl        *template.Template
+	subscribers *list.List
+	messages    chan Message
 }
 
 func New(lc fx.Lifecycle, logger *slog.Logger, tmpl *template.Template) *Hub {
 	h := &Hub{
-		logger:   logger,
-		tmpl:     tmpl,
-		clients:  list.New(),
-		messages: make(chan Message),
+		logger:      logger,
+		tmpl:        tmpl,
+		subscribers: list.New(),
+		messages:    make(chan Message),
 	}
 
 	lc.Append(fx.Hook{
@@ -58,10 +53,10 @@ func (h *Hub) Start() {
 			h.logger.Warn("failed to execute template 'message'", "data", data)
 			continue
 		}
-		for cur := h.clients.Front(); cur != nil; cur = cur.Next() {
-			client := cur.Value.(*Client)
+		for cur := h.subscribers.Front(); cur != nil; cur = cur.Next() {
+			conn := cur.Value.(*websocket.Conn)
 
-			if err := client.Conn.WriteMessage(websocket.TextMessage, buf.Bytes()); err != nil {
+			if err := conn.WriteMessage(websocket.TextMessage, buf.Bytes()); err != nil {
 				h.logger.Warn("failed to write message to connection", "err", err)
 				continue
 			}
@@ -69,13 +64,13 @@ func (h *Hub) Start() {
 	}
 }
 
-func (h *Hub) Join(client *Client) *list.Element {
-	return h.clients.PushBack(client)
+func (h *Hub) Subscribe(conn *websocket.Conn) *list.Element {
+	return h.subscribers.PushBack(conn)
 }
 
-func (h *Hub) Leave(e *list.Element) {
-	client := h.clients.Remove(e).(*Client)
-	client.Conn.Close()
+func (h *Hub) Unsubscribe(e *list.Element) {
+	conn := h.subscribers.Remove(e).(*websocket.Conn)
+	conn.Close()
 }
 
 func (h *Hub) Broadcast(msg Message) {
