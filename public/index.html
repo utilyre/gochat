@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Go Chat</title>
+
+    <script src="https://cdn.tailwindcss.com/3.3.3"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.5"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
+
+    <style>
+      html {
+        color-scheme: dark;
+      }
+    </style>
+  </head>
+
+  <body class="bg-slate-950 flex flex-col items-center p-2">
+    <h1 class="font-bold text-4xl">Go Chat</h1>
+
+    <div hx-ext="ws" ws-connect="/chat">
+      <ol id="room" class="mt-6 flex flex-col gap-4"></ol>
+
+      <form ws-send class="mt-10 flex flex-col gap-2">
+        <input name="name" placeholder="Name" />
+        <input name="payload" placeholder="Message" />
+
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  </body>
+</html>

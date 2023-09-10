@@ -1,0 +1,6 @@
+github.com/caarlos0/httperr v1.4.0 h1:XsWCAggNIk5gopDA/8CnPq4vLqMyzD0M+4JqI7PfB28=
+github.com/caarlos0/httperr v1.4.0/go.mod h1:dIhSDmb0R948KsW/14HHm3RDEVRXyRxr8n6xDwNDcJE=
+github.com/gorilla/mux v1.8.0 h1:i40aqfkR1h2SlN9hojwV5ZA91wcXFOvkdNIeFDP5koI=
+github.com/gorilla/mux v1.8.0/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
+github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
+github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
