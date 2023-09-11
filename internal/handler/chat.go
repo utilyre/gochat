@@ -21,13 +21,14 @@ type chatHandler struct {
 }
 
 func Chat(r *mux.Router, logger *slog.Logger, upgrader *websocket.Upgrader, hub *hub.Hub) {
+	s := r.PathPrefix("/api/chat").Subrouter()
 	h := chatHandler{
 		logger:   logger,
 		upgrader: upgrader,
 		hub:      hub,
 	}
 
-	r.HandleFunc("/api/chat", h.chat).Methods(http.MethodGet)
+	s.HandleFunc("", h.chat).Methods(http.MethodGet)
 }
 
 func (h chatHandler) chat(w http.ResponseWriter, r *http.Request) {

@@ -7,6 +7,7 @@ import (
 	"github.com/utilyre/gochat/internal/hub"
 	"github.com/utilyre/gochat/internal/logger"
 	"github.com/utilyre/gochat/internal/router"
+	"github.com/utilyre/gochat/internal/storage"
 	"github.com/utilyre/gochat/internal/template"
 	"github.com/utilyre/gochat/internal/validator"
 	"github.com/utilyre/gochat/internal/websocket"
@@ -24,8 +25,10 @@ func main() {
 			hub.New,
 			router.New,
 			websocket.NewUpgrader,
+			storage.NewUsersStorage,
 		),
 		fx.Invoke(
+			handler.Users,
 			handler.Chat,
 			handler.Static,
 		),
