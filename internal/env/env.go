@@ -8,7 +8,8 @@ type Env struct {
 	DBHost string
 	DBPort string
 
-	BEPort string
+	BEPort   string
+	BESecret []byte
 }
 
 func New() Env {
@@ -18,6 +19,7 @@ func New() Env {
 		DBHost: os.Getenv("DB_HOST"),
 		DBPort: os.Getenv("DB_PORT"),
 
-		BEPort: os.Getenv("BE_PORT"),
+		BEPort:   os.Getenv("BE_PORT"),
+		BESecret: []byte(os.Getenv("BE_SECRET")),
 	}
 }
