@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -18,6 +19,7 @@ type User struct {
 }
 
 type usersHandler struct {
+	logger   *slog.Logger
 	validate *validator.Validate
 	storage  storage.UsersStorage
 }
@@ -30,6 +32,7 @@ func Users(
 ) {
 	s := r.PathPrefix("/api/users").Subrouter()
 	h := usersHandler{
+		logger:   logger,
 		validate: validate,
 		storage:  storage,
 	}
@@ -59,7 +62,10 @@ func (h usersHandler) signup(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if err := h.storage.Create(dbUser); err != nil {
-		// TODO: dup
+		if errors.Is(err, storage.ErrDuplicateKey) {
+			return httperr.Errorf(http.StatusConflict, "user already exists")
+		}
+
 		return err
 	}
 

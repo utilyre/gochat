@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 var (
@@ -38,7 +39,16 @@ func (s UsersStorage) Create(user *User) error {
 	RETURNING "id", "created_at", "updated_at";
 	`
 
-	return s.db.Get(user, query, user.Email, user.Password)
+	if err := s.db.Get(user, query, user.Email, user.Password); err != nil {
+		pqErr := new(pq.Error)
+		if errors.As(err, &pqErr) && pqErr.Code == "23505" {
+			return ErrDuplicateKey
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func (s UsersStorage) ReadByEmail(user *User) error {
