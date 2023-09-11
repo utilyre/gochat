@@ -11,8 +11,8 @@ import (
 )
 
 type Message struct {
-	// TODO: Sender
-	Payload string
+	Sender  string `json:"-"`
+	Payload string `json:"payload"`
 }
 
 type Hub struct {

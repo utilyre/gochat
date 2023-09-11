@@ -1,8 +1,8 @@
 {{define "message"}}
 <ol id="room" hx-swap-oob="beforeend">
   <li>
-    <h2 class="font-semibold">{{.Name}}</h2>
-    <p class="indent-1">{{.Message}}</p>
+    <h2 class="font-semibold">{{.Sender}}</h2>
+    <p class="indent-1">{{.Payload}}</p>
   </li>
 </ol>
 {{end}}

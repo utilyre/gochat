@@ -13,10 +13,6 @@ import (
 	"github.com/utilyre/gochat/pkg/notifier"
 )
 
-type Message struct {
-	Payload string `json:"payload"`
-}
-
 type observer struct {
 	*websocket.Conn
 
@@ -27,14 +23,9 @@ type observer struct {
 var _ notifier.Observer[hub.Message] = observer{}
 
 func (o observer) OnNotify(msg hub.Message) {
-	data := map[string]any{
-		"Name":    "TODO",
-		"Message": msg.Payload,
-	}
-
 	buf := new(bytes.Buffer)
-	if err := o.tmpl.ExecuteTemplate(buf, "message", data); err != nil {
-		o.logger.Warn("failed to execute template 'message'", "data", data)
+	if err := o.tmpl.ExecuteTemplate(buf, "message", msg); err != nil {
+		o.logger.Warn("failed to execute template 'message'", "data", msg)
 		return
 	}
 
@@ -97,14 +88,14 @@ func (h chatHandler) chat(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		msg := new(Message)
+		msg := new(hub.Message)
 		if err := json.Unmarshal(data, msg); err != nil {
 			_ = conn.WriteMessage(websocket.TextMessage, []byte("Invalid JSON Payload"))
 			return
 		}
 
 		h.hub.Notify(hub.Message{
-			// TODO: Sender
+			Sender: "TODO",
 			Payload: msg.Payload,
 		})
 	}
