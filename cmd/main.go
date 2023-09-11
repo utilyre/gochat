@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/utilyre/gochat/internal/database"
 	"github.com/utilyre/gochat/internal/env"
 	"github.com/utilyre/gochat/internal/handler"
 	"github.com/utilyre/gochat/internal/hub"
@@ -18,6 +19,7 @@ func main() {
 			env.New,
 			logger.New,
 			template.New,
+			database.New,
 			validator.New,
 			hub.New,
 			router.New,

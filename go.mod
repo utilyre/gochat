@@ -6,6 +6,8 @@ require (
 	github.com/go-playground/validator/v10 v10.15.3
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.5.0
+	github.com/jmoiron/sqlx v1.3.5
+	github.com/lib/pq v1.2.0
 	go.uber.org/fx v1.20.0
 )
 

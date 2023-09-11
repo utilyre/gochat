@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/utilyre/gochat/internal/env"
@@ -22,7 +23,8 @@ func New(lc fx.Lifecycle, env env.Env, logger *slog.Logger) *mux.Router {
 		OnStart: func(ctx context.Context) error {
 			go func() {
 				if err := srv.ListenAndServe(); err != nil {
-					logger.Error("failed to listen and serve", "address", srv.Addr, "err", err)
+					logger.Error("failed to listen and serve", "address", srv.Addr, "error", err)
+					os.Exit(1)
 				}
 			}()
 

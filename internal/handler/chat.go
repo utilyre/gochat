@@ -47,7 +47,7 @@ func (h chatHandler) chat(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
-			h.logger.Warn("failed to read message from connection", "err", err)
+			h.logger.Warn("failed to read message from connection", "error", err)
 			return
 		}
 		if mt != websocket.TextMessage {

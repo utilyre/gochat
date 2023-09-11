@@ -57,7 +57,7 @@ func (h *Hub) Start() {
 			conn := cur.Value.(*websocket.Conn)
 
 			if err := conn.WriteMessage(websocket.TextMessage, buf.Bytes()); err != nil {
-				h.logger.Warn("failed to write message to connection", "err", err)
+				h.logger.Warn("failed to write message to connection", "error", err)
 				continue
 			}
 		}
