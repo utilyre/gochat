@@ -7,18 +7,12 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/caarlos0/httperr"
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/utilyre/gochat/internal/auth"
 	"github.com/utilyre/gochat/internal/env"
 	"github.com/utilyre/gochat/internal/storage"
 	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	ErrUserExists   = errors.New("user already exists")
-	ErrUserNotFound = errors.New("user not found")
 )
 
 type User struct {
@@ -51,27 +45,31 @@ func Users(
 		storage:  storage,
 	}
 
-	s.Handle("/signup", httperr.NewF(h.signup)).
+	s.HandleFunc("/signup", h.signup).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json")
 
-	s.Handle("/login", httperr.NewF(h.login)).
+	s.HandleFunc("/login", h.login).
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json")
 }
 
-func (h usersHandler) signup(w http.ResponseWriter, r *http.Request) error {
+func (h usersHandler) signup(w http.ResponseWriter, r *http.Request) {
 	user := new(User)
 	if err := json.NewDecoder(r.Body).Decode(user); err != nil {
-		return httperr.Errorf(http.StatusBadRequest, "%v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	if err := h.validate.Struct(user); err != nil {
-		return httperr.Errorf(http.StatusBadRequest, "%v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		h.logger.Warn("failed to generate hash from password", "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	dbUser := &storage.User{
@@ -80,53 +78,80 @@ func (h usersHandler) signup(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if err := h.storage.Create(dbUser); err != nil {
-		if errors.Is(err, storage.ErrDuplicateKey) {
-			return httperr.Errorf(http.StatusConflict, "%v", ErrUserExists)
+		switch {
+		case errors.Is(err, storage.ErrDuplicateKey):
+			http.Error(w, "user already exists", http.StatusConflict)
+		default:
+			h.logger.Warn("failed to create user in users table", "error", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 
-		return err
+		return
+	}
+
+	body, err := json.Marshal(map[string]any{
+		"id":    dbUser.ID,
+		"email": dbUser.Email,
+	})
+	if err != nil {
+		h.logger.Warn("failed to marshal response body", "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte("Created"))
-	return nil
+	if _, err := w.Write(body); err != nil {
+		h.logger.Warn("failed to write body to response", "error", err)
+	}
 }
 
-func (h usersHandler) login(w http.ResponseWriter, r *http.Request) error {
+func (h usersHandler) login(w http.ResponseWriter, r *http.Request) {
 	user := new(User)
 	if err := json.NewDecoder(r.Body).Decode(user); err != nil {
-		return httperr.Errorf(http.StatusBadRequest, "%v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 	if err := h.validate.Struct(user); err != nil {
-		return httperr.Errorf(http.StatusBadRequest, "%v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	dbUser := &storage.User{Email: user.Email}
 	if err := h.storage.ReadByEmail(dbUser); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return httperr.Errorf(http.StatusNotFound, "%v", ErrUserNotFound)
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			http.Error(w, "user not found", http.StatusNotFound)
+		default:
+			h.logger.Warn("failed to read user by email", "error", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 
-		return err
+		return
 	}
 
 	if err := bcrypt.CompareHashAndPassword(dbUser.Password, []byte(user.Password)); err != nil {
-		return httperr.Errorf(http.StatusNotFound, "%v", ErrUserNotFound)
+		http.Error(w, "user not found", http.StatusNotFound)
+		return
 	}
 
 	token, err := h.auth.Generate(dbUser.Email)
 	if err != nil {
-		return err
+		h.logger.Warn("failed to generate JWT", "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	body, err := json.Marshal(map[string]any{"token": token})
 	if err != nil {
-		return err
+		h.logger.Warn("failed to marshal response body", "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	w.Write(body)
-	return nil
+	if _, err := w.Write(body); err != nil {
+		h.logger.Warn("failed to write body to response", "error", err)
+	}
 }
