@@ -2,17 +2,19 @@ package router
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/utilyre/gochat/internal/env"
 	"go.uber.org/fx"
 )
 
-func New(lc fx.Lifecycle, logger *slog.Logger) *mux.Router {
+func New(lc fx.Lifecycle, env env.Env, logger *slog.Logger) *mux.Router {
 	r := mux.NewRouter()
 	srv := &http.Server{
-		Addr:    ":3000",
+		Addr:    fmt.Sprintf("0.0.0.0:%s", env.BEPort),
 		Handler: r,
 	}
 

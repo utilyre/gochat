@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/utilyre/gochat/internal/env"
 	"github.com/utilyre/gochat/internal/handler"
 	"github.com/utilyre/gochat/internal/hub"
 	"github.com/utilyre/gochat/internal/logger"
@@ -14,6 +15,7 @@ import (
 func main() {
 	fx.New(
 		fx.Provide(
+			env.New,
 			logger.New,
 			template.New,
 			validator.New,
