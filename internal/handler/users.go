@@ -12,6 +12,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
+	"github.com/utilyre/gochat/internal/auth"
 	"github.com/utilyre/gochat/internal/env"
 	"github.com/utilyre/gochat/internal/storage"
 	"golang.org/x/crypto/bcrypt"
@@ -113,13 +114,7 @@ func (h usersHandler) login(w http.ResponseWriter, r *http.Request) error {
 		return httperr.Errorf(http.StatusNotFound, "%v", ErrUserNotFound)
 	}
 
-	token, err := jwt.NewWithClaims(
-		jwt.SigningMethodHS256,
-		jwt.MapClaims{
-			"email": dbUser.Email,
-			"exp":   time.Now().Add(72 * time.Hour).Unix(),
-		},
-	).SignedString(h.env.BESecret)
+	token, err := auth.New(h.env.BESecret, dbUser.Email)
 	if err != nil {
 		return err
 	}
