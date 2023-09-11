@@ -15,4 +15,4 @@ db:
 		postgres:15.3-alpine3.18
 
 migrate:
-	goose -dir migrations postgres "user=${DB_USER} password=${DB_PASS} host=${DB_HOST} port=${DB_PORT} sslmode=disable" up
+	goose -dir migrations postgres "user='${DB_USER}' password='${DB_PASS}' host='${DB_HOST}' port='${DB_PORT}' sslmode=disable" up

@@ -14,7 +14,7 @@ import (
 
 func New(lc fx.Lifecycle, env env.Env, logger *slog.Logger) *sqlx.DB {
 	dsn := fmt.Sprintf(
-		"user=%s password=%s host=%s port=%s sslmode=disable",
+		"user='%s' password='%s' host='%s' port='%s' sslmode=disable",
 		env.DBUser, env.DBPass, env.DBHost, env.DBPort,
 	)
 
