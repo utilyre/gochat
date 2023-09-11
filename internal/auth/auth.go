@@ -35,4 +35,16 @@ func (a Auth) Generate(email string) (string, error) {
 	return token.SignedString(a.env.BESecret)
 }
 
-// TODO: func Verify
+func (a Auth) Verify(token string) (*Claims, error) {
+	claims := new(Claims)
+
+	if _, err := jwt.ParseWithClaims(
+		token,
+		claims,
+		func(t *jwt.Token) (any, error) { return a.env.BESecret, nil },
+	); err != nil {
+		return nil, err
+	}
+
+	return claims, nil
+}
