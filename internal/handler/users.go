@@ -6,11 +6,9 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/caarlos0/httperr"
 	"github.com/go-playground/validator/v10"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 	"github.com/utilyre/gochat/internal/auth"
 	"github.com/utilyre/gochat/internal/env"
@@ -32,6 +30,7 @@ type usersHandler struct {
 	env      env.Env
 	logger   *slog.Logger
 	validate *validator.Validate
+	auth     auth.Auth
 	storage  storage.UsersStorage
 }
 
@@ -40,6 +39,7 @@ func Users(
 	env env.Env,
 	logger *slog.Logger,
 	validate *validator.Validate,
+	auth auth.Auth,
 	storage storage.UsersStorage,
 ) {
 	s := r.PathPrefix("/api/users").Subrouter()
@@ -47,6 +47,7 @@ func Users(
 		env:      env,
 		logger:   logger,
 		validate: validate,
+		auth:     auth,
 		storage:  storage,
 	}
 
@@ -114,7 +115,7 @@ func (h usersHandler) login(w http.ResponseWriter, r *http.Request) error {
 		return httperr.Errorf(http.StatusNotFound, "%v", ErrUserNotFound)
 	}
 
-	token, err := auth.New(h.env.BESecret, dbUser.Email)
+	token, err := h.auth.Generate(dbUser.Email)
 	if err != nil {
 		return err
 	}
