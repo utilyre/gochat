@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/utilyre/gochat/internal/env"
 )
 
 type Claims struct {
@@ -13,15 +12,7 @@ type Claims struct {
 	Email string `json:"email"`
 }
 
-type Auth struct {
-	env env.Env
-}
-
-func New(env env.Env) Auth {
-	return Auth{env: env}
-}
-
-func (a Auth) Generate(email string) (string, error) {
+func Generate(secret []byte, email string) (string, error) {
 	token := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
 		Claims{
@@ -32,16 +23,16 @@ func (a Auth) Generate(email string) (string, error) {
 		},
 	)
 
-	return token.SignedString(a.env.BESecret)
+	return token.SignedString(secret)
 }
 
-func (a Auth) Verify(token string) (*Claims, error) {
+func Verify(secret []byte, token string) (*Claims, error) {
 	claims := new(Claims)
 
 	if _, err := jwt.ParseWithClaims(
 		token,
 		claims,
-		func(t *jwt.Token) (any, error) { return a.env.BESecret, nil },
+		func(t *jwt.Token) (any, error) { return secret, nil },
 	); err != nil {
 		return nil, err
 	}

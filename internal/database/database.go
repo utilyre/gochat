@@ -23,7 +23,6 @@ func New(lc fx.Lifecycle, env env.Env, logger *slog.Logger) *sqlx.DB {
 		logger.Error("failed to open connection to database", "error", err)
 		os.Exit(1)
 	}
-	logger.Info("database connection has been opened")
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {

@@ -24,7 +24,6 @@ type usersHandler struct {
 	env      env.Env
 	logger   *slog.Logger
 	validate *validator.Validate
-	auth     auth.Auth
 	storage  storage.UsersStorage
 }
 
@@ -33,7 +32,6 @@ func Users(
 	env env.Env,
 	logger *slog.Logger,
 	validate *validator.Validate,
-	auth auth.Auth,
 	storage storage.UsersStorage,
 ) {
 	s := r.PathPrefix("/api/users").Subrouter()
@@ -41,7 +39,6 @@ func Users(
 		env:      env,
 		logger:   logger,
 		validate: validate,
-		auth:     auth,
 		storage:  storage,
 	}
 
@@ -135,7 +132,7 @@ func (h usersHandler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.auth.Generate(dbUser.Email)
+	token, err := auth.Generate(h.env.BESecret, dbUser.Email)
 	if err != nil {
 		h.logger.Warn("failed to generate JWT", "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
