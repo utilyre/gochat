@@ -1,29 +1,66 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
+	"html/template"
 	"log/slog"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/utilyre/gochat/internal/hub"
+	"github.com/utilyre/gochat/pkg/notifier"
 )
 
 type Message struct {
 	Payload string `json:"payload"`
 }
 
+type observer struct {
+	*websocket.Conn
+
+	logger *slog.Logger
+	tmpl   *template.Template
+}
+
+var _ notifier.Observer[hub.Message] = observer{}
+
+func (o observer) OnNotify(msg hub.Message) {
+	data := map[string]any{
+		"Name":    "TODO",
+		"Message": msg.Payload,
+	}
+
+	buf := new(bytes.Buffer)
+	if err := o.tmpl.ExecuteTemplate(buf, "message", data); err != nil {
+		o.logger.Warn("failed to execute template 'message'", "data", data)
+		return
+	}
+
+	if err := o.WriteMessage(websocket.TextMessage, buf.Bytes()); err != nil {
+		o.logger.Warn("failed to write message to connection", "error", err)
+	}
+}
+
 type chatHandler struct {
 	logger   *slog.Logger
+	tmpl     *template.Template
 	upgrader *websocket.Upgrader
 	hub      *hub.Hub
 }
 
-func Chat(r *mux.Router, logger *slog.Logger, upgrader *websocket.Upgrader, hub *hub.Hub) {
+func Chat(
+	r *mux.Router,
+	logger *slog.Logger,
+	tmpl *template.Template,
+	upgrader *websocket.Upgrader,
+	hub *hub.Hub,
+) {
 	s := r.PathPrefix("/api/chat").Subrouter()
 	h := chatHandler{
 		logger:   logger,
+		tmpl:     tmpl,
 		upgrader: upgrader,
 		hub:      hub,
 	}
@@ -38,8 +75,12 @@ func (h chatHandler) chat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	e := h.hub.Subscribe(conn)
-	defer h.hub.Unsubscribe(e)
+	e := h.hub.Register(observer{
+		Conn:   conn,
+		logger: h.logger,
+		tmpl:   h.tmpl,
+	})
+	defer h.hub.Deregister(e)
 
 	for {
 		mt, data, err := conn.ReadMessage()
@@ -62,7 +103,7 @@ func (h chatHandler) chat(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		h.hub.Broadcast(hub.Message{
+		h.hub.Notify(hub.Message{
 			// TODO: Sender
 			Payload: msg.Payload,
 		})

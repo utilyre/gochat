@@ -1,13 +1,12 @@
 package hub
 
 import (
-	"bytes"
-	"container/list"
 	"context"
 	"html/template"
 	"log/slog"
+	"os"
 
-	"github.com/gorilla/websocket"
+	"github.com/utilyre/gochat/pkg/notifier"
 	"go.uber.org/fx"
 )
 
@@ -17,62 +16,35 @@ type Message struct {
 }
 
 type Hub struct {
-	logger      *slog.Logger
-	tmpl        *template.Template
-	subscribers *list.List
-	messages    chan Message
+	notifier.Notifier[Message]
+
+	logger *slog.Logger
+	tmpl   *template.Template
 }
 
 func New(lc fx.Lifecycle, logger *slog.Logger, tmpl *template.Template) *Hub {
 	h := &Hub{
-		logger:      logger,
-		tmpl:        tmpl,
-		subscribers: list.New(),
-		messages:    make(chan Message),
+		Notifier: notifier.New[Message](),
+		logger:   logger,
+		tmpl:     tmpl,
 	}
 
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			go h.Start()
+			go func() {
+				if err := h.Listen(); err != nil {
+					logger.Error("failed to listen for messages", "error", err)
+					os.Exit(1)
+				}
+			}()
+
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			h.Shutdown()
 			return nil
 		},
 	})
 
 	return h
-}
-
-func (h *Hub) Start() {
-	for msg := range h.messages {
-		data := map[string]any{
-			"Name":    "TODO",
-			"Message": msg.Payload,
-		}
-
-		buf := new(bytes.Buffer)
-		if err := h.tmpl.ExecuteTemplate(buf, "message", data); err != nil {
-			h.logger.Warn("failed to execute template 'message'", "data", data)
-			continue
-		}
-		for cur := h.subscribers.Front(); cur != nil; cur = cur.Next() {
-			conn := cur.Value.(*websocket.Conn)
-
-			if err := conn.WriteMessage(websocket.TextMessage, buf.Bytes()); err != nil {
-				h.logger.Warn("failed to write message to connection", "error", err)
-				continue
-			}
-		}
-	}
-}
-
-func (h *Hub) Subscribe(conn *websocket.Conn) *list.Element {
-	return h.subscribers.PushBack(conn)
-}
-
-func (h *Hub) Unsubscribe(e *list.Element) {
-	conn := h.subscribers.Remove(e).(*websocket.Conn)
-	conn.Close()
-}
-
-func (h *Hub) Broadcast(msg Message) {
-	h.messages <- msg
 }
