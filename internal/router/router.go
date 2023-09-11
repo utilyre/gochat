@@ -21,11 +21,8 @@ func New(lc fx.Lifecycle, env env.Env, logger *slog.Logger) *mux.Router {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
-				err := srv.ListenAndServe()
-				logger.Info("started server", "address", srv.Addr)
-
-				if err != nil {
-					logger.Error("failed to listen and serve", "err", err)
+				if err := srv.ListenAndServe(); err != nil {
+					logger.Error("failed to listen and serve", "address", srv.Addr, "err", err)
 				}
 			}()
 
