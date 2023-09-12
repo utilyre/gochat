@@ -8,8 +8,7 @@
     <script src="https://unpkg.com/htmx.org@1.9.5"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
 
-    <link rel="stylesheet" href="/style.css" />
-    <script defer src="/main.js"></script>
+    <link rel="stylesheet" href="/global.css" />
   </head>
 
   <body class="bg-slate-950 flex flex-col items-center p-2">
@@ -34,5 +33,10 @@
         </button>
       </form>
     </div>
+
+    <script>
+      const form = document.querySelector("form");
+      document.body.addEventListener("htmx:wsAfterSend", () => form.reset());
+    </script>
   </body>
 </html>
