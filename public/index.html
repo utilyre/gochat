@@ -12,10 +12,10 @@
   </head>
 
   <body class="bg-slate-950 flex flex-col items-center p-2">
-    <h1 class="font-bold text-4xl">Go Chat</h1>
+    <h1 class="font-bold text-4xl mb-6">Go Chat</h1>
 
     <div hx-ext="ws" ws-connect="/api/chat">
-      <ol id="room" class="mt-6 flex flex-col gap-4"></ol>
+      <ol id="room" class="flex flex-col gap-4"></ol>
 
       <form ws-send class="mt-10 flex gap-2">
         <input

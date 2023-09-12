@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Go Chat | Sign Up</title>
+
+    <script src="https://cdn.tailwindcss.com/3.3.3"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.5"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+
+    <link rel="stylesheet" href="/global.css" />
+  </head>
+
+  <body class="bg-slate-950 flex flex-col items-center p-2">
+    <h1 class="font-bold text-4xl mb-6">Sign Up</h1>
+
+    <form
+      hx-post="/api/users/signup"
+      hx-ext="json-enc"
+      class="flex flex-col gap-2"
+    >
+      <input
+        required
+        name="email"
+        type="email"
+        placeholder="Email"
+        class="bg-slate-800 p-1"
+      />
+
+      <input
+        required
+        name="password"
+        type="password"
+        onkeyup="checkConfirmPassword()"
+        placeholder="Password"
+        class="bg-slate-800 p-1"
+      />
+
+      <input
+        required
+        id="confirm-password"
+        type="password"
+        onkeyup="checkConfirmPassword()"
+        placeholder="Confirm Password"
+        class="bg-slate-800 p-1"
+      />
+
+      <button
+        type="submit"
+        class="mt-2 p-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-900 transition-colors"
+      >
+        Sign Up
+      </button>
+    </form>
+
+    <script>
+      const password = document.querySelector("[name='password']");
+      const confirmPassword = document.querySelector("#confirm-password");
+
+      function checkConfirmPassword() {
+        if (password.value === confirmPassword.value) {
+          confirmPassword.setCustomValidity("");
+        } else {
+          confirmPassword.setCustomValidity(
+            "Please re-enter the same password."
+          );
+        }
+      }
+    </script>
+
+    <script>
+      const form = document.querySelector("form");
+
+      /*
+      form.addEventListener('', (e) => {
+      })
+      */
+    </script>
+  </body>
+</html>

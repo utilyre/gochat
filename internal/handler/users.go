@@ -98,6 +98,7 @@ func (h usersHandler) signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("HX-Redirect", "/login")
 	w.WriteHeader(http.StatusCreated)
 	if _, err := w.Write(body); err != nil {
 		h.logger.Warn("failed to write body to response", "error", err)
