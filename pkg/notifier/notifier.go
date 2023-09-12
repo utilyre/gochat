@@ -45,6 +45,13 @@ func (n *notifier[T]) Deregister(e *list.Element) Observer[T] {
 	return n.observers.Remove(e).(Observer[T])
 }
 
+func (n *notifier[T]) broadcast(e T) {
+	for cur := n.observers.Front(); cur != nil; cur = cur.Next() {
+		o := cur.Value.(Observer[T])
+		o.OnNotify(e)
+	}
+}
+
 func (n *notifier[T]) Listen() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	n.cancel = cancel
@@ -54,10 +61,7 @@ func (n *notifier[T]) Listen() error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case e := <-n.events:
-			for cur := n.observers.Front(); cur != nil; cur = cur.Next() {
-				o := cur.Value.(Observer[T])
-				o.OnNotify(e)
-			}
+			go n.broadcast(e)
 		}
 	}
 }
