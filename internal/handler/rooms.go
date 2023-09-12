@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"html/template"
 	"log/slog"
 	"net/http"
 
@@ -19,6 +21,7 @@ type Room struct {
 type roomsHandler struct {
 	validate *validator.Validate
 	logger   *slog.Logger
+	tmpl     *template.Template
 	storage  storage.RoomsStorage
 }
 
@@ -26,12 +29,14 @@ func Rooms(
 	r *mux.Router,
 	validate *validator.Validate,
 	logger *slog.Logger,
+	tmpl *template.Template,
 	storage storage.RoomsStorage,
 ) {
 	s := r.PathPrefix("/api/rooms").Subrouter()
 	h := roomsHandler{
 		validate: validate,
 		logger:   logger,
+		tmpl:     tmpl,
 		storage:  storage,
 	}
 
@@ -39,10 +44,10 @@ func Rooms(
 		Methods(http.MethodPost).
 		Headers("Content-Type", "application/json")
 
-	/*
-		s.HandleFunc("", h.readAll).
-			Methods(http.MethodGet)
+	s.HandleFunc("", h.readAll).
+		Methods(http.MethodGet)
 
+	/*
 		s.HandleFunc("/{id:[0-9]+}", h.read).
 			Methods(http.MethodGet)
 
@@ -92,4 +97,24 @@ func (h roomsHandler) create(w http.ResponseWriter, r *http.Request) {
 	if _, err := w.Write(body); err != nil {
 		h.logger.Warn("failed to write body to response", "error", err)
 	}
+}
+
+func (h roomsHandler) readAll(w http.ResponseWriter, r *http.Request) {
+	dbRooms := []storage.Room{}
+	if err := h.storage.ReadAll(&dbRooms); err != nil {
+		h.logger.Warn("failed to read all rooms from database", "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	buf := new(bytes.Buffer)
+	if err := h.tmpl.ExecuteTemplate(buf, "rooms", dbRooms); err != nil {
+		h.logger.Warn("failed to execute 'rooms' template", "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html")
+	w.WriteHeader(http.StatusOK)
+	w.Write(buf.Bytes())
 }

@@ -1,0 +1,15 @@
+<!-- prettier-ignore -->
+{{define "rooms"}}
+{{range .}}
+{{template "room" .}}
+{{end}}
+{{end}}
+
+{{define "room"}}
+<li
+  onclick="location.href = '/{{.ID}}'"
+  class="bg-slate-800 hover:bg-slate-700 transition-colors w-80 p-4 cursor-pointer"
+>
+  <h2 class="text-lg">{{.Name}}</h2>
+</li>
+{{end}}
