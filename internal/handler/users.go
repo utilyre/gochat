@@ -16,8 +16,9 @@ import (
 )
 
 type User struct {
+	ID       int64  `json:"id" validate:"isdefault"`
 	Email    string `json:"email" validate:"required,email,max=255"`
-	Password string `json:"password" validate:"required,min=8"`
+	Password string `json:"password,omitempty" validate:"required,min=8"`
 }
 
 type usersHandler struct {
@@ -86,10 +87,10 @@ func (h usersHandler) signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := json.Marshal(map[string]any{
-		"id":    dbUser.ID,
-		"email": dbUser.Email,
-	})
+	user.ID = dbUser.ID
+	user.Password = ""
+
+	body, err := json.Marshal(user)
 	if err != nil {
 		h.logger.Warn("failed to marshal response body", "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
