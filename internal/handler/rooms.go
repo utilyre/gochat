@@ -116,5 +116,7 @@ func (h roomsHandler) readAll(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	w.Write(buf.Bytes())
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		h.logger.Warn("failed to write body to response", "error", err)
+	}
 }
