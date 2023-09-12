@@ -26,10 +26,11 @@ func main() {
 			router.New,
 			websocket.NewUpgrader,
 			storage.NewUsersStorage,
+			storage.NewRoomsStorage,
 		),
 		fx.Invoke(
 			handler.Users,
-			handler.Chat,
+			handler.Rooms,
 			handler.Static,
 		),
 	).Run()
