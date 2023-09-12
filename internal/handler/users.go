@@ -149,6 +149,7 @@ func (h usersHandler) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("HX-Redirect", "/")
 	w.WriteHeader(http.StatusCreated)
 	if _, err := w.Write(body); err != nil {
 		h.logger.Warn("failed to write body to response", "error", err)

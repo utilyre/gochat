@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Go Chat | Sign Up</title>
+    <title>Go Chat | Login</title>
 
     <script src="https://cdn.tailwindcss.com/3.3.3"></script>
     <script src="https://unpkg.com/htmx.org@1.9.5"></script>
@@ -15,7 +15,7 @@
     <h1 class="font-bold text-4xl mb-6">Sign Up</h1>
 
     <form
-      hx-post="/api/users/signup"
+      hx-post="/api/users/login"
       hx-ext="json-enc"
       class="flex flex-col gap-2"
     >
@@ -31,17 +31,7 @@
         required
         name="password"
         type="password"
-        onkeyup="checkConfirmPassword()"
         placeholder="Password"
-        class="bg-slate-800 p-1"
-      />
-
-      <input
-        required
-        id="confirm-password"
-        type="password"
-        onkeyup="checkConfirmPassword()"
-        placeholder="Confirm Password"
         class="bg-slate-800 p-1"
       />
 
@@ -49,23 +39,21 @@
         type="submit"
         class="mt-2 p-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-900 transition-colors"
       >
-        Sign Up
+        Login
       </button>
     </form>
 
     <script>
-      const password = document.querySelector("[name='password']");
-      const confirmPassword = document.querySelector("#confirm-password");
+      const form = document.querySelector("form");
 
-      function checkConfirmPassword() {
-        if (password.value === confirmPassword.value) {
-          confirmPassword.setCustomValidity("");
-        } else {
-          confirmPassword.setCustomValidity(
-            "Please re-enter the same password."
-          );
+      form.addEventListener("htmx:afterRequest", (e) => {
+        if (e.detail.successful === false) {
+          return;
         }
-      }
+
+        const token = JSON.parse(e.detail.xhr.response).token;
+        localStorage.setItem("gochat-token", token);
+      });
     </script>
   </body>
 </html>
