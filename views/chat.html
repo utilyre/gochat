@@ -1,0 +1,52 @@
+{{define "chat"}}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Go Chat | Chat Room</title>
+
+    <script src="https://cdn.tailwindcss.com/3.3.3"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.5"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
+
+    <link rel="stylesheet" href="/global.css" />
+  </head>
+
+  <body class="bg-slate-950 flex flex-col items-center p-2">
+    <h1 class="font-bold text-4xl mb-6">Chat Room</h1>
+
+    <div hx-ext="ws" ws-connect="/api/rooms/{{.}}/chat">
+      <ol id="room" class="flex flex-col gap-4"></ol>
+
+      <form ws-send class="mt-10 flex gap-2">
+        <input
+          required
+          name="payload"
+          placeholder="Message"
+          class="bg-slate-800 p-1"
+        />
+
+        <button
+          type="submit"
+          class="p-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-900 transition-colors"
+        >
+          Send
+        </button>
+      </form>
+    </div>
+
+    <script>
+      const form = document.querySelector("form");
+
+      form.addEventListener("htmx:wsOpen", (e) => {
+        const token = localStorage.getItem("gochat-token");
+
+        // TODO: send JWT
+        console.log(e)
+      });
+
+      form.addEventListener("htmx:wsAfterSend", () => form.reset());
+    </script>
+  </body>
+</html>
+{{end}}
