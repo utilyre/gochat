@@ -139,16 +139,9 @@ func (h roomsHandler) readAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	buf := new(bytes.Buffer)
-	if err := h.tmpl.ExecuteTemplate(buf, "rooms", dbRooms); err != nil {
-		h.logger.Warn("failed to execute 'rooms' template", "error", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "text/html")
 	w.WriteHeader(http.StatusOK)
-	if _, err := w.Write(buf.Bytes()); err != nil {
+	if err := h.tmpl.ExecuteTemplate(w, "rooms", dbRooms); err != nil {
 		h.logger.Warn("failed to write body to response", "error", err)
 	}
 }
