@@ -16,7 +16,7 @@ type Message struct {
 }
 
 type Hub struct {
-	notifier.Notifier[Message]
+	notifier.Notifier[*Message]
 
 	logger *slog.Logger
 	tmpl   *template.Template
@@ -24,7 +24,7 @@ type Hub struct {
 
 func New(lc fx.Lifecycle, logger *slog.Logger, tmpl *template.Template) *Hub {
 	h := &Hub{
-		Notifier: notifier.New[Message](),
+		Notifier: notifier.New[*Message](),
 		logger:   logger,
 		tmpl:     tmpl,
 	}
