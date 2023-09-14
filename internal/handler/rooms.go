@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
@@ -147,20 +148,30 @@ func (h roomsHandler) readAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h roomsHandler) chat(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.ParseInt(vars["id"], 10, 64)
+	if err != nil {
+		h.logger.Warn("failed to convert id URL parameter to int64", "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
 	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		h.logger.Warn("failed to upgrade protocol", err.Error())
+		h.logger.Warn("failed to upgrade protocol", "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 	defer conn.Close()
 
-	e := h.hub.Register(messageObserver{
+	o := messageObserver{
 		conn:   conn,
 		logger: h.logger,
 		tmpl:   h.tmpl,
-	})
-	defer h.hub.Deregister(e)
+	}
+
+	e := h.hub.Join(id, o)
+	defer func() { _ = h.hub.Leave(id, e) }()
 
 	for {
 		mt, data, err := conn.ReadMessage()
@@ -190,6 +201,8 @@ func (h roomsHandler) chat(w http.ResponseWriter, r *http.Request) {
 		}
 
 		msg.Sender = "TODO"
-		h.hub.Notify(msg)
+		if err := h.hub.Send(id, msg); err != nil {
+			h.logger.Warn("failed to send message to room", "error", err)
+		}
 	}
 }

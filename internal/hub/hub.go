@@ -37,19 +37,22 @@ func New(lc fx.Lifecycle, logger *slog.Logger, tmpl *template.Template) *Hub {
 	return h
 }
 
-func (h *Hub) Join(o notifier.Observer[*Message], id int64) *list.Element {
+func (h *Hub) Join(id int64, o notifier.Observer[*Message]) *list.Element {
 	room, ok := h.rooms[id]
 	if !ok {
-		room := notifier.New[*Message]()
-		go func() { _ = room.Listen() }()
+		r := notifier.New[*Message]()
+		go func() { _ = r.Listen() }()
 
-		h.rooms[id] = room
+		h.rooms[id] = r
+		room = r
+
+		h.logger.Info("created a new room", "id", id)
 	}
 
 	return room.Register(o)
 }
 
-func (h *Hub) Leave(e *list.Element, id int64) error {
+func (h *Hub) Leave(id int64, e *list.Element) error {
 	room, ok := h.rooms[id]
 	if !ok {
 		return ErrRoomNotFound
@@ -59,7 +62,19 @@ func (h *Hub) Leave(e *list.Element, id int64) error {
 	if room.Len() == 0 {
 		delete(h.rooms, id)
 		room.Shutdown()
+
+		h.logger.Info("deleted room", "id", id)
 	}
 
+	return nil
+}
+
+func (h *Hub) Send(id int64, msg *Message) error {
+	room, ok := h.rooms[id]
+	if !ok {
+		return ErrRoomNotFound
+	}
+
+	room.Notify(msg)
 	return nil
 }

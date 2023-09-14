@@ -55,7 +55,7 @@ func (h staticHandler) chat(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.ParseInt(vars["id"], 10, 64)
 	if err != nil {
-		h.logger.Warn("failed to convert id URL parameter to integer", "error", err)
+		h.logger.Warn("failed to convert id URL parameter to int64", "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
