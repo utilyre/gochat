@@ -14,6 +14,7 @@ type (
 		Notify(T)
 		Register(Observer[T]) *list.Element
 		Deregister(*list.Element) Observer[T]
+		Len() int
 		Listen() error
 		Shutdown()
 	}
@@ -43,6 +44,10 @@ func (n *notifier[T]) Register(s Observer[T]) *list.Element {
 
 func (n *notifier[T]) Deregister(e *list.Element) Observer[T] {
 	return n.observers.Remove(e).(Observer[T])
+}
+
+func (n *notifier[T]) Len() int {
+	return n.observers.Len()
 }
 
 func (n *notifier[T]) broadcast(e T) {
