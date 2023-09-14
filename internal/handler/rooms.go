@@ -22,8 +22,7 @@ type Room struct {
 }
 
 type messageObserver struct {
-	*websocket.Conn
-
+	conn   *websocket.Conn
 	logger *slog.Logger
 	tmpl   *template.Template
 }
@@ -37,7 +36,7 @@ func (o messageObserver) OnNotify(msg *hub.Message) {
 		return
 	}
 
-	if err := o.WriteMessage(websocket.TextMessage, buf.Bytes()); err != nil {
+	if err := o.conn.WriteMessage(websocket.TextMessage, buf.Bytes()); err != nil {
 		o.logger.Warn("failed to write message to connection", "error", err)
 	}
 }
@@ -161,9 +160,10 @@ func (h roomsHandler) chat(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	defer conn.Close()
 
 	e := h.hub.Register(messageObserver{
-		Conn:   conn,
+		conn:   conn,
 		logger: h.logger,
 		tmpl:   h.tmpl,
 	})
