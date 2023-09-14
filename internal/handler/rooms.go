@@ -12,6 +12,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/utilyre/gochat/internal/auth"
+	"github.com/utilyre/gochat/internal/env"
 	"github.com/utilyre/gochat/internal/hub"
 	"github.com/utilyre/gochat/internal/storage"
 	"github.com/utilyre/gochat/pkg/notifier"
@@ -43,6 +45,7 @@ func (o messageObserver) OnNotify(msg *hub.Message) {
 }
 
 type roomsHandler struct {
+	env      env.Env
 	validate *validator.Validate
 	logger   *slog.Logger
 	tmpl     *template.Template
@@ -56,6 +59,7 @@ type roomsHandler struct {
 
 func Rooms(
 	r *mux.Router,
+	env env.Env,
 	validate *validator.Validate,
 	logger *slog.Logger,
 	tmpl *template.Template,
@@ -65,6 +69,7 @@ func Rooms(
 ) {
 	s := r.PathPrefix("/api/rooms").Subrouter()
 	h := roomsHandler{
+		env:      env,
 		validate: validate,
 		logger:   logger,
 		tmpl:     tmpl,
@@ -173,23 +178,20 @@ func (h roomsHandler) chat(w http.ResponseWriter, r *http.Request) {
 	e := h.hub.Join(id, o)
 	defer func() { _ = h.hub.Leave(id, e) }()
 
+	data := readMessage(conn, h.logger)
+	claims, err := auth.Verify(h.env.BESecret, string(data))
+	if err != nil {
+		if err := conn.WriteMessage(websocket.TextMessage, []byte(err.Error())); err != nil {
+			h.logger.Warn("failed to write message to connection", "error", err)
+		}
+
+		return
+	}
+
+	h.logger.Info("user entered chat room", "room-id", id, "user-email", claims.Email)
+
 	for {
-		mt, data, err := conn.ReadMessage()
-		if err != nil {
-			if websocket.IsCloseError(err, websocket.CloseGoingAway) {
-				return
-			}
-
-			h.logger.Warn("failed to read message from connection", "error", err)
-			return
-		}
-		if mt != websocket.TextMessage {
-			if err := conn.WriteMessage(websocket.TextMessage, []byte("Unsupported Message Type")); err != nil {
-				h.logger.Warn("failed to write message to connection", "error", err)
-			}
-
-			return
-		}
+		data := readMessage(conn, h.logger)
 
 		msg := new(hub.Message)
 		if err := json.Unmarshal(data, msg); err != nil {
@@ -200,9 +202,30 @@ func (h roomsHandler) chat(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		msg.Sender = "TODO"
+		msg.Sender = claims.Email
 		if err := h.hub.Send(id, msg); err != nil {
 			h.logger.Warn("failed to send message to room", "error", err)
 		}
 	}
+}
+
+func readMessage(conn *websocket.Conn, logger *slog.Logger) []byte {
+	mt, data, err := conn.ReadMessage()
+	if err != nil {
+		if websocket.IsCloseError(err, websocket.CloseGoingAway) {
+			return nil
+		}
+
+		logger.Warn("failed to read message from connection", "error", err)
+		return nil
+	}
+	if mt != websocket.TextMessage {
+		if err := conn.WriteMessage(websocket.TextMessage, []byte("Unsupported Message Type")); err != nil {
+			logger.Warn("failed to write message to connection", "error", err)
+		}
+
+		return nil
+	}
+
+	return data
 }

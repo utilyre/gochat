@@ -15,7 +15,7 @@
   <body class="bg-slate-950 flex flex-col items-center p-2">
     <h1 class="font-bold text-4xl mb-6">Chat Room</h1>
 
-    <div hx-ext="ws" ws-connect="/api/rooms/{{.}}/chat">
+    <div id="ws-container" hx-ext="ws" ws-connect="/api/rooms/{{.}}/chat">
       <ol id="room" class="flex flex-col gap-4"></ol>
 
       <form ws-send class="mt-10 flex gap-2">
@@ -36,13 +36,14 @@
     </div>
 
     <script>
+      const wsContainer = document.querySelector("#ws-container");
       const form = document.querySelector("form");
 
-      form.addEventListener("htmx:wsOpen", (e) => {
+      wsContainer.addEventListener("htmx:wsOpen", (e) => {
         const token = localStorage.getItem("gochat-token");
 
-        // TODO: send JWT
-        console.log(e)
+        const ws = e.detail.event.target;
+        ws.send(token);
       });
 
       form.addEventListener("htmx:wsAfterSend", () => form.reset());
