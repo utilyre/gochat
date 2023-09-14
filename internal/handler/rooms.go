@@ -169,15 +169,6 @@ func (h roomsHandler) chat(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	o := messageObserver{
-		conn:   conn,
-		logger: h.logger,
-		tmpl:   h.tmpl,
-	}
-
-	e := h.hub.Join(id, o)
-	defer func() { _ = h.hub.Leave(id, e) }()
-
 	data := readMessage(conn, h.logger)
 	claims, err := auth.Verify(h.env.BESecret, string(data))
 	if err != nil {
@@ -187,6 +178,15 @@ func (h roomsHandler) chat(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	o := messageObserver{
+		conn:   conn,
+		logger: h.logger,
+		tmpl:   h.tmpl,
+	}
+
+	e := h.hub.Join(id, o)
+	defer func() { _ = h.hub.Leave(id, e) }()
 
 	h.logger.Info("user entered chat room", "room-id", id, "user-email", claims.Email)
 
